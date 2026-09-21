@@ -1,98 +1,185 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ThemedText } from "@/components/themed-text";
+import {
+  ActivityIndicator,
+  Button,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { ShareBar } from "@/components/share-bar";
+import { Stat } from "@/components/stat";
+import { ThemedView } from "@/components/themed-view";
+import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { summarise } from "@/data/summary";
+import { useCustomers } from "@/hooks/use-customers";
+import { Link } from "expo-router";
 
 export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+  const { status, customers, problem, retry } = useCustomers();
+  const summary = summarise(customers);
 
-        <ThemedText type="code" style={styles.code}>
-          get started
+  if (status === "loading")
+    return (
+      <ThemedView
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+        }}
+      >
+        <ActivityIndicator />
+        <ThemedText themeColor="textSecondary">
+          Loading statistics...
         </ThemedText>
+      </ThemedView>
+    );
+  if (status === "error")
+    return (
+      <ThemedView
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+        }}
+      >
+        <ThemedText>{problem}</ThemedText>
+        <Button title="Try Again" onPress={retry} />
+      </ThemedView>
+    );
+  if (status === "empty")
+    return (
+      <ThemedView
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 12,
+        }}
+      >
+        <ThemedText>No customers yet...</ThemedText>
+      </ThemedView>
+    );
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+  {
+    summary.ranked.map((c) => (
+      <ShareBar key={c.id} name={c.name} balance={c.balance} share={c.share} />
+    ));
+  }
 
-        {Platform.OS === 'web' && <WebBadge />}
+  return (
+    <ThemedView style={{ flex: 1, gap: 12 }}>
+      <SafeAreaView
+        style={{ flex: 1, maxWidth: MaxContentWidth, width: "100%" }}
+      >
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: Spacing.four,
+            paddingTop:
+              Platform.OS === "web"
+                ? Spacing.six + Spacing.three
+                : Spacing.four,
+            paddingBottom: BottomTabInset + Spacing.four,
+            gap: Spacing.four,
+          }}
+        >
+          <ThemedView style={{ gap: Spacing.two }}>
+            <ThemedText style={{ fontSize: 12 }}>
+              Harvey Tyson Ablen | MobComp 2
+            </ThemedText>
+            <ThemedText
+              style={{
+                fontSize: 64,
+                fontWeight: 600,
+                lineHeight: 64,
+              }}
+            >
+              Pautang Mo Diri
+            </ThemedText>
+          </ThemedView>
+          <ThemedView
+            type="backgroundElement"
+            style={{
+              borderRadius: Spacing.four,
+              padding: Spacing.four,
+              gap: Spacing.four,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Stat
+                label="Total Owed"
+                value={`₱ ${summary.total.toFixed(2)}`}
+              />
+              <Stat
+                label="Average Owed"
+                value={`₱ ${summary.average.toFixed(2)}`}
+              />
+            </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Stat
+                label="Still Owing"
+                value={`${summary.owing} of ${summary.count}`}
+              />
+              <Stat label="Settled" value={String(summary.settled)} />
+            </View>
+          </ThemedView>
+
+          <ThemedView
+            type="backgroundElement"
+            style={{
+              borderRadius: Spacing.four,
+              padding: Spacing.four,
+              gap: Spacing.four,
+            }}
+          >
+            <ThemedText type="small" themeColor="textSecondary">
+              Amount owed per customer
+            </ThemedText>
+            {summary.ranked.map((c) => (
+              <ShareBar
+                key={c.id}
+                name={c.name}
+                balance={c.balance}
+                share={c.share}
+              />
+            ))}
+            {summary.ranked.length === 0 && (
+              <ThemedText themeColor="textSecondary">
+                Everyone has paid up.
+              </ThemedText>
+            )}
+          </ThemedView>
+
+          <Link href="/customers" asChild>
+            <Pressable
+              style={{
+                backgroundColor: "#3c87f7",
+                borderRadius: Spacing.three,
+                paddingVertical: Spacing.three,
+                alignItems: "center",
+              }}
+            >
+              <ThemedText style={{ fontSize: 18 }}>View Customers</ThemedText>
+            </Pressable>
+          </Link>
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
