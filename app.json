@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Ablen-Week-2",
-    "slug": "Ablen-Week-2",
+    "name": "Ablen Tindahan Ledger",
+    "slug": "ablen-tindahan-ledger",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "ablenweek2",
+    "scheme": "ablentindahanledger",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
