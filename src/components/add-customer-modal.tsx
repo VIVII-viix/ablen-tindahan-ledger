@@ -64,7 +64,7 @@ export function AddCustomerModal({
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      style={{ backgroundColor: theme.background }}
       onRequestClose={close}
     >
       <View

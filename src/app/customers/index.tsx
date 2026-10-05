@@ -7,6 +7,7 @@ import { AddCustomerModal } from "@/components/add-customer-modal";
 import { CustomerRow } from "@/components/customer-row";
 import { ThemedView } from "@/components/themed-view";
 import { useCustomers } from "@/hooks/use-customers";
+import { useProfile } from "@/hooks/use-profile";
 import { useTheme } from "@/hooks/use-theme";
 import { Href, useRouter } from "expo-router";
 
@@ -14,6 +15,7 @@ export default function CustomersScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { status, customers, problem, retry } = useCustomers();
+  const profile = useProfile();
   const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -84,7 +86,9 @@ export default function CustomersScreen() {
       <ThemedText style={{ fontSize: 18 }}>
         Total Owed: ₱ {total.toFixed(2)}
       </ThemedText>
-      <Button title="Add customer" onPress={() => setAdding(true)} />
+      {profile?.role === "admin" && (
+        <Button title="Add customer" onPress={() => setAdding(true)} />
+      )}
       <FlatList
         data={shown}
         keyExtractor={(c) => c.id}
